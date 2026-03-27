@@ -3,8 +3,6 @@ ifeq ($(UNAME_S),Darwin)
   PREFIX ?= $(shell if [ -d /opt/homebrew ]; then echo /opt/homebrew; else echo /usr/local; fi)
 else
   PREFIX ?= /usr/local
-  CC     = /opt/software/gcc/13.2.0/bin/gcc
-  HTSSRC = src/genesis/build/htslib-install
 endif
 
 ifeq ($(origin HTSSRC), undefined)
@@ -68,7 +66,7 @@ genesisC: genesis
 	$(MAKE) -C src/genesisC GENESIS_PREFIX=$(GENESIS_PREFIX_FOR_BUILD) genesisC
 
 unicorn: src/main_unicorn.c $(OBJ) src/version.h
-	$(CC) -o $@ $< libunicorn.a src/genesisC/genesisC.o -Isrc $(CFLAGS) -fPIE $(LDFLAGS) -Wl,-rpath,src/genesis/build/htslib-install/lib -lhts -lz -lm -lpthread -lstdc++
+	$(CC) -o $@ $< libunicorn.a src/genesisC/genesisC.o -Isrc $(CFLAGS) -fPIE $(LDFLAGS) -lhts -lz -lm -lpthread -lstdc++
 
 src/version.h: src/version.h.in
 	sed 's/@GIT_COMMIT@/$(GIT_COMMIT)/' $< > $@

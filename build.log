@@ -1,0 +1,75 @@
+make -C src/genesis
+/opt/software/gcc/13.2.0/bin/gcc -Wall -Wextra -Wno-unused-function -pedantic -g3  -c -o src/klib/klib.o src/klib/kthread.c -fPIC
+make[1]: Entering directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis'
+sed 's/@GIT_COMMIT@/39e362b/' src/version.h.in > src/version.h
+Running make...
+make -s -C build
+make[2]: Entering directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis/build'
+/opt/software/gcc/13.2.0/bin/gcc -o src/libunicorn/unicorn_reassign.o src/libunicorn/unicorn_reassign.c -c -Wall -Wextra -Wsign-compare -Wno-unused-function -pedantic -std=c11 -Isrc -Isrc/genesis/build/htslib-install/include -Isrc/genesisC -fPIC -O3 
+/opt/software/gcc/13.2.0/bin/gcc -o src/libunicorn/unicorn_IO.o src/libunicorn/unicorn_IO.c -c -Wall -Wextra -Wsign-compare -Wno-unused-function -pedantic -std=c11 -Isrc -Isrc/genesis/build/htslib-install/include -Isrc/genesisC -fPIC -O3 
+/opt/software/gcc/13.2.0/bin/gcc -o src/libunicorn/unicorn_alnfilt.o src/libunicorn/unicorn_alnfilt.c -c -Wall -Wextra -Wsign-compare -Wno-unused-function -pedantic -std=c11 -Isrc -Isrc/genesis/build/htslib-install/include -Isrc/genesisC -fPIC -O3 
+/opt/software/gcc/13.2.0/bin/gcc -o src/libunicorn/unicorn_alnstats.o src/libunicorn/unicorn_alnstats.c -c -Wall -Wextra -Wsign-compare -Wno-unused-function -pedantic -std=c11 -Isrc -Isrc/genesis/build/htslib-install/include -Isrc/genesisC -fPIC -O3 
+/opt/software/gcc/13.2.0/bin/gcc -o src/libunicorn/unicorn_refstats.o src/libunicorn/unicorn_refstats.c -c -Wall -Wextra -Wsign-compare -Wno-unused-function -pedantic -std=c11 -Isrc -Isrc/genesis/build/htslib-install/include -Isrc/genesisC -fPIC -O3 
+/opt/software/gcc/13.2.0/bin/gcc -o src/libunicorn/unicorn_bamstats.o src/libunicorn/unicorn_bamstats.c -c -Wall -Wextra -Wsign-compare -Wno-unused-function -pedantic -std=c11 -Isrc -Isrc/genesis/build/htslib-install/include -Isrc/genesisC -fPIC -O3 
+/opt/software/gcc/13.2.0/bin/gcc -o src/libunicorn/unicorn_tidstats.o src/libunicorn/unicorn_tidstats.c -c -Wall -Wextra -Wsign-compare -Wno-unused-function -pedantic -std=c11 -Isrc -Isrc/genesis/build/htslib-install/include -Isrc/genesisC -fPIC -O3 
+/opt/software/gcc/13.2.0/bin/gcc -o src/libunicorn/unicorn_taxonomy.o src/libunicorn/unicorn_taxonomy.c -c -Wall -Wextra -Wsign-compare -Wno-unused-function -pedantic -std=c11 -Isrc -Isrc/genesis/build/htslib-install/include -Isrc/genesisC -fPIC -O3 
+/opt/software/gcc/13.2.0/bin/gcc -o src/libunicorn/unicorn_internal.o src/libunicorn/unicorn_internal.c -c -Wall -Wextra -Wsign-compare -Wno-unused-function -pedantic -std=c11 -Isrc -Isrc/genesis/build/htslib-install/include -Isrc/genesisC -fPIC -O3 
+make[3]: Entering directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis/build'
+make[4]: Entering directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis/build'
+In file included from src/libunicorn/unicorn_internal.h:38,
+                 from src/libunicorn/unicorn_refstats.c:2:
+src/libunicorn/unicorn_refstats.c: In function 'ks_sample__sfloat':
+src/klib/ksort.h:276:31: warning: comparison of integer expressions of different signedness: 'int' and 'size_t' {aka 'long unsigned int'} [-Wsign-compare]
+  276 |                         if (k != n - pop - 1) tmp = a[k], a[k] = a[n-pop-1], a[n-pop-1] = tmp; \
+      |                               ^~
+src/libunicorn/unicorn_refstats.c:5:1: note: in expansion of macro 'KSORT_INIT'
+    5 | KSORT_INIT(_sfloat, float, ks_lt_generic)
+      | ^~~~~~~~~~
+make[4]: Leaving directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis/build'
+src/libunicorn/unicorn_tidstats.c: In function '_merge_result':
+src/libunicorn/unicorn_tidstats.c:313:20: warning: taking address of packed member of 'struct <anonymous>' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  313 |     taxstat_t *t = &kh_val(taxmap, k);
+src/libunicorn/unicorn_tidstats.c: In function '_finalise_worker':
+src/libunicorn/unicorn_tidstats.c:552:23: warning: taking address of packed member of 'struct <anonymous>' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  552 |     taxstat_t *t    = &kh_val(ctx->taxmap, k);
+src/libunicorn/unicorn_tidstats.c: In function 'unicorn_tidstat_compute':
+src/libunicorn/unicorn_tidstats.c:752:28: warning: taking address of packed member of 'struct <anonymous>' may result in an unaligned pointer value [-Waddress-of-packed-member]
+  752 |             taxstat_t *t = &kh_val(taxmap, k);
+In file included from src/libunicorn/unicorn_internal.h:38,
+                 from src/libunicorn/unicorn_internal.c:4:
+src/libunicorn/unicorn_internal.c: In function 'ks_sample__surange':
+src/klib/ksort.h:276:31: warning: comparison of integer expressions of different signedness: 'int' and 'size_t' {aka 'long unsigned int'} [-Wsign-compare]
+  276 |                         if (k != n - pop - 1) tmp = a[k], a[k] = a[n-pop-1], a[n-pop-1] = tmp; \
+      |                               ^~
+src/libunicorn/unicorn_internal.c:28:1: note: in expansion of macro 'KSORT_INIT'
+   28 | KSORT_INIT(_surange, _urangeevent, _eventlt)
+      | ^~~~~~~~~~
+src/libunicorn/unicorn_internal.c: In function 'ks_sample__suint32':
+src/klib/ksort.h:276:31: warning: comparison of integer expressions of different signedness: 'int' and 'size_t' {aka 'long unsigned int'} [-Wsign-compare]
+  276 |                         if (k != n - pop - 1) tmp = a[k], a[k] = a[n-pop-1], a[n-pop-1] = tmp; \
+      |                               ^~
+src/libunicorn/unicorn_internal.c:29:1: note: in expansion of macro 'KSORT_INIT'
+   29 | KSORT_INIT(_suint32, uint32_t, ks_lt_generic)
+      | ^~~~~~~~~~
+[ 80%] Built target htslib
+make[4]: Entering directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis/build'
+make[4]: Leaving directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis/build'
+src/libunicorn/unicorn_bamstats.c: In function 'unicorn_bamstat_pdists':
+src/libunicorn/unicorn_bamstats.c:200:66: warning: '%s' directive argument is null [-Wformat-overflow=]
+  200 |         fprintf(stderr, "[unicorn::%s] Printing distributions to %s.*.dist.txt\n",
+      |                                                                  ^~
+[ 90%] Built target genesis_lib_obj
+make[4]: Entering directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis/build'
+make[4]: Leaving directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis/build'
+[100%] Built target genesis_lib_shared
+make[3]: Leaving directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis/build'
+make[2]: Leaving directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis/build'
+Done.
+make[1]: Leaving directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis'
+make -C src/genesisC GENESIS_PREFIX=/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesis genesisC
+make[1]: Entering directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesisC'
+make[1]: Nothing to be done for 'genesisC'.
+make[1]: Leaving directory '/maps/projects/caeg/people/npl206/programmes/unicorn-playground/src/genesisC'
+ar rcs libunicorn.a src/libunicorn/unicorn_reassign.o src/libunicorn/unicorn_IO.o src/libunicorn/unicorn_alnfilt.o src/libunicorn/unicorn_alnstats.o src/libunicorn/unicorn_refstats.o src/libunicorn/unicorn_bamstats.o src/libunicorn/unicorn_tidstats.o src/libunicorn/unicorn_taxonomy.o src/libunicorn/unicorn_internal.o src/klib/klib.o
+/opt/software/gcc/13.2.0/bin/gcc -o unicorn src/main_unicorn.c libunicorn.a src/genesisC/genesisC.o -Isrc -Wall -Wextra -Wsign-compare -Wno-unused-function -pedantic -std=c11 -Isrc -Isrc/genesis/build/htslib-install/include -Isrc/genesisC -fPIC -O3 -fPIE -Lsrc/genesis/build/htslib-install/lib -Wl,-rpath,src/genesis/build/htslib-install/lib -lhts -lz -lm -lpthread -lstdc++
+cp src/unicorn.h .

@@ -103,6 +103,7 @@ static void taxmap_free(taxmap_t *map)
     refmap_free(v.refmap);
     if (v.readset)
       u64set_destroy(v.readset);
+		lint2int_destroy(v.camex);
   }
   taxmap_destroy(map);
 }
@@ -132,6 +133,7 @@ unicorn_stat_t *unicorn_stat_init(uint32_t minnreads,
                                   float    minmani,
                                   int32_t  minalnas,
                                   int32_t  maxdust,
+                                  uint8_t  ksize,
                                   uint8_t  flg)
 {
   unicorn_stat_t *stats = calloc(1, sizeof(unicorn_stat_t));
@@ -147,6 +149,7 @@ unicorn_stat_t *unicorn_stat_init(uint32_t minnreads,
   stats->minmani   = minmani;
   stats->minalnas  = minalnas;
   stats->maxdust   = maxdust;
+  stats->ksize     = ksize;
   memset(stats->_readlc, 0, 256*sizeof(uint32_t));
   return stats;
 }
