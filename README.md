@@ -295,35 +295,6 @@ With `--duplicity`, a 23rd column is added:
 
 ---
 
-### 4. reassign — EM algorithm filtering
-
-Filter alignments using an Expectation-Maximization algorithm to probabilistically reassign reads that map to multiple references. Reimplementation of [bamfilter](https://github.com/genomewalker/bam-filter?tab=readme-ov-file#how-the-reassignment-process-works).
-
-> **Requires query-grouped BAM.** Sort with `samtools sort -n input.bam -o query_grouped.bam`.
-
-> **Note:** The EM reassignment algorithm is designed for prokaryotic metagenomic data. It is **not recommended for eukaryotic metagenomic classification**, where genome size variation, repetitive elements, and shared conserved regions make probabilistic read reassignment unreliable. For eukaryotic data, use `alnfilt` with explicit ANI thresholds instead.
-
-```bash
-./unicorn reassign [options] -b <in.bam>|<in.sam>
-Options:
-  -b <str>                     Input bam|sam
-  -o <str> | --outbam  <str>   Output BAM file [stdout]
-  -t <int> | --threads <int>   Number of threads [4]
-  --alpha <float>              Score retention scaling factor (0.0, 1.0] [0.80]
-  --niter <int>                Max number of EM iterations [5]
-  --scale-type <str>           Subject weight scaling type [LENGTH]
-                               Available: NONE, LENGTH, SQRTLEN
-  --verbose                    Print libunicorn's messages.
-  -h                           Print this help message
-```
-
-**Example:**
-```bash
-./unicorn reassign -b query_grouped.bam --alpha 0.9 --niter 10 -o reassigned.bam
-```
-
----
-
 ### 5. bamstats — Per-BAM statistics
 
 Compute overall statistics for one or more BAM/SAM files. Useful as a quick quality check on the BAM file before or after filtering.
@@ -360,11 +331,16 @@ samtools sort -o coordinate_sorted.bam input.bam
 ### Prokaryotic metagenomics
 
 ```bash
-# 1. Filter ambiguous alignments with EM (requires query-grouped BAM)
-./unicorn reassign -b readname_sorted.bam --alpha 0.8 -o reassigned.bam
+# 1. Filter alignments by ANI
+./unicorn alnfilt \
+  -b readname_sorted.bam \
+  --mode ALLTOP \
+  --minani 93.0 \
+  --minreads 3 \
+  -o filtered.bam
 
 # 2. Sort by coordinate for taxstats
-samtools sort -o coordinate_sorted.bam reassigned.bam
+samtools sort -o coordinate_sorted.bam filtered.bam
 
 # 3. Compute per-taxid statistics
 ./unicorn taxstats \
@@ -384,7 +360,8 @@ samtools sort -o coordinate_sorted.bam reassigned.bam
 ./unicorn alnfilt \
   -b readname_sorted.bam \
   --mode ALLTOP \
-  --minani 95.0 \
+  --minani 93.0 \
+  --minreads 3 \
   -o filtered.bam
 
 # 2. Sort by coordinate for taxstats
@@ -401,6 +378,8 @@ samtools sort -o coordinate_sorted.bam filtered.bam
   --duplicity \
   --outstat species_stats.txt
 ```
+
+> **Recommended post-filtering:** After running `taxstats`, filter the output table to retain taxa with `median_alnani >= 95` to remove marginal hits that passed the initial ANI threshold but have a lower median ANI across all alignments.
 
 ### Quality checking
 
@@ -443,6 +422,32 @@ make test
 ## Developers
 
 For development information, see [src/README.md](https://github.com/miwipe/unicorn-playground/tree/dev/src)
+
+---
+
+## Experimental features
+
+### reassign — EM algorithm filtering
+
+> **Experimental — not recommended for production use.** The EM reassignment algorithm is under active development and has not been fully validated. It is also **not suitable for eukaryotic metagenomic classification**, where genome size variation, repetitive elements, and shared conserved regions make probabilistic read reassignment unreliable. For all current use cases, use `alnfilt` with explicit ANI thresholds instead.
+
+Filter alignments using an Expectation-Maximization algorithm to probabilistically reassign reads that map to multiple references. Reimplementation of [bamfilter](https://github.com/genomewalker/bam-filter?tab=readme-ov-file#how-the-reassignment-process-works).
+
+> **Requires query-grouped BAM.** Sort with `samtools sort -n input.bam -o readname_sorted.bam`.
+
+```bash
+./unicorn reassign [options] -b <in.bam>|<in.sam>
+Options:
+  -b <str>                     Input bam|sam
+  -o <str> | --outbam  <str>   Output BAM file [stdout]
+  -t <int> | --threads <int>   Number of threads [4]
+  --alpha <float>              Score retention scaling factor (0.0, 1.0] [0.80]
+  --niter <int>                Max number of EM iterations [5]
+  --scale-type <str>           Subject weight scaling type [LENGTH]
+                               Available: NONE, LENGTH, SQRTLEN
+  --verbose                    Print libunicorn's messages.
+  -h                           Print this help message
+```
 
 ## License
 
