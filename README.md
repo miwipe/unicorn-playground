@@ -1,4 +1,4 @@
-![C/C++ CI](https://github.com/GeoGenetics/unicorn/actions/workflows/c-cpp.yml/badge.svg?branch=unicorn)
+![C/C++ CI](https://github.com/miwipe/unicorn-playground/actions/workflows/c-cpp.yml/badge.svg?branch=dev)
 
 # Unicorn
 
@@ -17,8 +17,8 @@ Unicorn depends on:
 Make sure htslib is installed and available:
 
 ```bash
-git clone --recursive https://github.com/GeoGenetics/unicorn.git
-cd unicorn
+git clone --recursive https://github.com/miwipe/unicorn-playground.git
+cd unicorn-playground
 make
 ```
 
@@ -57,17 +57,17 @@ unicorn 2.4.0 39e362b
 ./unicorn command [options] -b <in.bam>|<in.sam>
 Commands:
   refstats    Compute per reference statistics.
-  bamstats    Compute per bam statistics.
+  alnfilt     Filter alignments based on user-defined criteria.
   taxstats    Compute per taxid statistics.
   reassign    Filter alignments via EM algorithm.
-  alnfilt     Filter alignments based on user-defined criteria.
+  bamstats    Compute per bam statistics.
 ```
 
 ## Commands in Detail
 
 ### 1. refstats — Per-reference statistics
 
-Compute statistics for each reference sequence.
+Compute statistics for each reference sequence in the BAM file.
 
 ```bash
 ./unicorn refstats [options] -b <in.bam>|<in.sam>
@@ -108,65 +108,99 @@ Options:
 
 **Output format (30 columns):**
 
-| # | Column | Description |
-|---|--------|-------------|
-| 1 | Id | Reference name |
-| 2 | Length | Reference length |
-| 3 | n_alns | Number of alignments |
-| 4 | n_reads | Number of reads (≤ n_alns) |
-| 5 | m_readl | Mean read length |
-| 6 | std_readl | Standard deviation of read length |
-| 7 | md_readl | Median read length |
-| 8 | mo_readl | Mode read length |
-| 9 | readl_min | Minimum read length |
-| 10 | readl_max | Maximum read length |
-| 11 | m_alnnm | Mean alignment edit distance |
-| 12 | m_alnani | Mean alignment ANI |
-| 13 | std_alnani | Standard deviation of ANI |
-| 14 | md_alnani | Median ANI |
-| 15 | n_covbases | Number of covered bases |
-| 16 | m_cov | Mean coverage depth |
-| 17 | breath_cov | Breadth of coverage |
-| 18 | exp_breath | Expected breadth |
-| 19 | breath_ratio | Breadth ratio |
-| 20 | m_covcovered | Mean coverage of covered positions |
-| 21 | std_covcovered | Std dev of coverage of covered positions |
-| 22 | evenness_cov | Evenness of coverage |
-| 23 | site_density | Site density |
-| 24 | entropy | Coverage entropy |
-| 25 | gini | Coverage Gini coefficient |
-| 26 | n_entropy | Normalised entropy |
-| 27 | n_gini | Normalised Gini coefficient |
-| 28 | tad80 | Truncated average depth at 80% of coverage mass |
-| 29 | mdust | Mean dust score |
-| 30 | std_dust | Standard deviation of dust score |
+#### Read statistics
+
+| # | Column | Description | Interpretation |
+|---|--------|-------------|----------------|
+| 1 | Id | Reference sequence name | — |
+| 2 | Length | Reference length (bp) | — |
+| 3 | n_alns | Total number of alignments | Includes multi-mappers |
+| 4 | n_reads | Number of unique reads (≤ n_alns) | One read may align to multiple references |
+| 5 | m_readl | Mean read length (bp) | For aDNA typically 30–80 bp |
+| 6 | std_readl | Standard deviation of read length | Low std dev expected for aDNA |
+| 7 | md_readl | Median read length (bp) | Robust to outliers |
+| 8 | mo_readl | Mode read length (bp) | Most frequent read length |
+| 9 | readl_min | Minimum read length (bp) | — |
+| 10 | readl_max | Maximum read length (bp) | — |
+
+#### Alignment quality
+
+| # | Column | Description | Interpretation |
+|---|--------|-------------|----------------|
+| 11 | m_alnnm | Mean alignment edit distance | **Lower = fewer mismatches.** Used alongside ANI |
+| 12 | m_alnani | Mean alignment ANI (%) | **Higher = more specific hit.** For modern data >95%; for aDNA >90% typical. Values <90% suggest cross-mapping |
+| 13 | std_alnani | Standard deviation of ANI | Low = consistent mapping quality |
+| 14 | md_alnani | Median ANI (%) | Robust to outliers; compare with m_alnani to detect skewed distributions |
+
+#### Coverage
+
+| # | Column | Description | Interpretation |
+|---|--------|-------------|----------------|
+| 15 | n_covbases | Number of covered bases | Raw count of positions with ≥1 read |
+| 16 | m_cov | Mean coverage depth (×) | Average depth across the entire reference including uncovered positions |
+| 17 | breath_cov | Breadth of coverage (0–1) | **Higher = more likely true positive.** Fraction of reference covered by ≥1 read. Low breadth with high depth signals spurious mapping |
+| 18 | exp_breath | Expected breadth (0–1) | Theoretical breadth under random uniform read placement given m_cov |
+| 19 | breath_ratio | Observed / expected breadth | **Values near 1.0 = coverage consistent with authentic random placement.** Values >>1 suggest pile-ups; values <<1 suggest clustered mapping |
+| 20 | m_covcovered | Mean depth of covered positions (×) | Coverage depth restricted to positions that are actually covered |
+| 21 | std_covcovered | Std dev of depth on covered positions | **Lower = more even coverage.** High values indicate pile-ups or gaps |
+| 22 | evenness_cov | Evenness of coverage (0–1) | **Higher = more even coverage = less likely contaminant** |
+| 23 | site_density | Covered bases per kb of reference | Proportion of reference covered, expressed per kilobase |
+
+#### Coverage distribution metrics
+
+| # | Column | Description | Interpretation |
+|---|--------|-------------|----------------|
+| 24 | entropy | Shannon entropy of coverage depth distribution | **Higher = more uniform depth distribution** |
+| 25 | gini | Gini coefficient of coverage depth (0–1) | **Lower = more even coverage.** 0 = perfectly uniform; 1 = all reads piled at one position |
+| 26 | n_entropy | Normalised Shannon entropy (0–1) | Entropy scaled to [0,1]; comparable across references of different sizes. **Higher = more uniform** |
+| 27 | n_gini | Normalised Gini coefficient (0–1) | Gini normalised for reference length. **Lower = more even** |
+| 28 | tad80 | Truncated average depth at 80% (×) | Mean depth after removing the top and bottom 10% of coverage mass. More robust than m_cov for references with pile-ups or gaps |
+
+#### Read complexity
+
+| # | Column | Description | Interpretation |
+|---|--------|-------------|----------------|
+| 29 | mdust | Mean DUST score | **Lower = less low-complexity sequence.** High DUST scores indicate repetitive or low-complexity reads |
+| 30 | std_dust | Standard deviation of DUST score | High std dev = mixture of complex and low-complexity reads |
 
 ---
 
-### 2. bamstats — Per-BAM statistics
+### 2. alnfilt — Alignment filtering
 
-Compute overall statistics for one or more BAM/SAM files.
+Filter alignments based on ANI bounds and a user-defined selection strategy. Useful as a pre-processing step before `taxstats`, particularly for eukaryotic data where the EM-based `reassign` is not appropriate.
+
+> **Requires query-grouped BAM.** Sort with `samtools sort -n input.bam -o query_grouped.bam`.
 
 ```bash
-./unicorn bamstats [options] -b <in.bam>|<in.sam>
+./unicorn alnfilt [options] -b <in.bam>|<in.sam>
 Options:
-  -b <str>         Input bam|sam
-  --outstat <str>  Output statistics file
-  --filelist <str> File containing input file paths, one per line.
-  --printdists     Print distributions of read lengths and ANI.
-                   Creates <inputname>.rlen.dists.txt and <inputname>.ani.dists.txt
+  -b <str>                     Input bam|sam
+  -o <str> | --outbam  <str>   Output BAM file [stdout]
+  -t <int> | --threads <int>   Number of threads [4]
+  --mode <str>                 Filter mode [ALLTOP]
+                               Available modes:
+                                ALLTOP  - Keep all best-scoring alignments
+                                RNDTOP  - Randomly select one best alignment
+                                PCTTOP  - Keep alignments within --pct of best
+                                ALL     - Keep all alignments
+  --pct <float>                Percentage threshold for PCTTOP mode [0.90]
+  --minani <float>             Minimum ANI [90.0]
+  --maxani <float>             Maximum ANI [100.0]
+  --strictbounds               Remove query if any alignment is out of ANI bounds
+  --verbose                    Print libunicorn's messages.
+  -h                           Print this help message
 ```
 
 **Example:**
 ```bash
-./unicorn bamstats -b input.bam > bam_summary.txt
+./unicorn alnfilt -b query_grouped.bam --mode ALLTOP --minani 95.0 -o filtered.bam
 ```
 
 ---
 
 ### 3. taxstats — Per-taxid statistics
 
-Compute statistics grouped by taxonomic ID.
+Compute statistics grouped by taxonomic ID across all reference sequences assigned to each taxon.
 
 > **Requires coordinate-sorted BAM.** Sort with `samtools sort -o sorted.bam input.bam` before running.
 
@@ -188,8 +222,7 @@ Options:
        - minmani  <float>      Minimum mean ANI per taxid [0]
        - minalnas <int>        Minimum alignment score [-Inf]
        - maxdust  <int>        Maximum alignment dust score [100]
-  --duplicity                  Enable kmer-based duplicity computation.
-                               Adds a duplicity column to the output.
+  --duplicity                  Enable duplicity computation (see below).
                                Disabled by default (expensive on large BAMs).
   --filelist <str>             File containing input file paths, one per line.
   --rank <str>                 Taxonomic rank to summarise by [species]
@@ -215,42 +248,60 @@ Options:
 
 Without `--duplicity` (22 columns):
 
-| # | Column | Description |
-|---|--------|-------------|
-| 1 | taxid | Taxonomic ID |
-| 2 | name | Taxonomic name |
-| 3 | num_accessions | Number of reference sequences |
-| 4 | total_length | Total reference length |
-| 5 | num_alns | Number of alignments |
-| 6 | num_reads | Number of reads |
-| 7 | mean_readl | Mean read length |
-| 8 | stdev_readl | Standard deviation of read length |
-| 9 | median_readl | Median read length |
-| 10 | mode_readl | Mode read length |
-| 11 | readl_min | Minimum read length |
-| 12 | readl_max | Maximum read length |
-| 13 | mean_alnnm | Mean alignment edit distance |
-| 14 | mean_alnani | Mean alignment ANI |
-| 15 | stdev_alnani | Standard deviation of ANI |
-| 16 | num_covbases | Number of covered bases |
-| 17 | mean_cov | Mean coverage depth |
-| 18 | breath_cov | Breadth of coverage |
-| 19 | exp_breath | Expected breadth |
-| 20 | breath_ratio | Breadth ratio |
-| 21 | mean_covcovered | Mean coverage of covered positions |
-| 22 | site_density | Site density |
+#### Reference and read statistics
+
+| # | Column | Description | Interpretation |
+|---|--------|-------------|----------------|
+| 1 | taxid | NCBI Taxonomic ID | — |
+| 2 | name | Taxonomic name at target rank | — |
+| 3 | num_accessions | Number of reference sequences in this taxid | More accessions = better genome representation |
+| 4 | total_length | Total reference length (bp) | Sum across all accessions |
+| 5 | num_alns | Total number of alignments | — |
+| 6 | num_reads | Number of unique reads | — |
+| 7 | mean_readl | Mean read length (bp) | For aDNA typically 30–80 bp |
+| 8 | stdev_readl | Standard deviation of read length | — |
+| 9 | median_readl | Median read length (bp) | — |
+| 10 | mode_readl | Mode read length (bp) | — |
+| 11 | readl_min | Minimum read length (bp) | — |
+| 12 | readl_max | Maximum read length (bp) | — |
+
+#### Alignment quality
+
+| # | Column | Description | Interpretation |
+|---|--------|-------------|----------------|
+| 13 | mean_alnnm | Mean alignment edit distance | **Lower = fewer mismatches** |
+| 14 | mean_alnani | Mean alignment ANI (%) | **Higher = more specific hit.** For modern data >95%; for aDNA >90% typical |
+| 15 | stdev_alnani | Standard deviation of ANI | Low = consistent mapping quality across all accessions |
+
+#### Coverage
+
+| # | Column | Description | Interpretation |
+|---|--------|-------------|----------------|
+| 16 | num_covbases | Total covered bases across all accessions | — |
+| 17 | mean_cov | Mean coverage depth (×) | Averaged across all accessions and their full lengths |
+| 18 | breath_cov | Breadth of coverage (0–1) | **Higher = more likely true positive.** Fraction of total reference length covered |
+| 19 | exp_breath | Expected breadth under random placement (0–1) | Theoretical value given mean_cov |
+| 20 | breath_ratio | Observed / expected breadth | **Values near 1.0 = authentic random placement.** Values <<1 suggest pile-ups or highly uneven mapping |
+| 21 | mean_covcovered | Mean depth of covered positions (×) | Depth restricted to covered bases only |
+| 22 | site_density | Covered bases per kb of reference | Proportion of reference covered, per kilobase |
 
 With `--duplicity`, a 23rd column is added:
 
-| 23 | duplicity | Fraction of unique k-mers (proxy for genome complexity) |
+#### Duplicity
+
+| # | Column | Description | Interpretation |
+|---|--------|-------------|----------------|
+| 23 | duplicity | Mean number of times each unique k-mer (k=17 by default) was observed across all reads assigned to this taxid | **Values near 1.0 indicate mostly unique k-mers** — consistent with reads from single-copy genomic regions. **Higher values indicate repetitive sequence or multi-copy elements**, where the same k-mers appear in many reads. Can be used to flag taxa where read evidence is dominated by repetitive or conserved sequence rather than unique genomic content |
 
 ---
 
 ### 4. reassign — EM algorithm filtering
 
-Filter alignments using an Expectation-Maximization algorithm to reassign reads with multiple alignments. Reimplementation of [bamfilter](https://github.com/genomewalker/bam-filter?tab=readme-ov-file#how-the-reassignment-process-works).
+Filter alignments using an Expectation-Maximization algorithm to probabilistically reassign reads that map to multiple references. Reimplementation of [bamfilter](https://github.com/genomewalker/bam-filter?tab=readme-ov-file#how-the-reassignment-process-works).
 
 > **Requires query-grouped BAM.** Sort with `samtools sort -n input.bam -o query_grouped.bam`.
+
+> **Note:** The EM reassignment algorithm is designed for prokaryotic metagenomic data. It is **not recommended for eukaryotic metagenomic classification**, where genome size variation, repetitive elements, and shared conserved regions make probabilistic read reassignment unreliable. For eukaryotic data, use `alnfilt` with explicit ANI thresholds instead.
 
 ```bash
 ./unicorn reassign [options] -b <in.bam>|<in.sam>
@@ -268,67 +319,97 @@ Options:
 
 **Example:**
 ```bash
-./unicorn reassign -b input.bam --alpha 0.9 --niter 10 -o reassigned.bam
+./unicorn reassign -b query_grouped.bam --alpha 0.9 --niter 10 -o reassigned.bam
 ```
 
 ---
 
-### 5. alnfilt — Alignment filtering
+### 5. bamstats — Per-BAM statistics
 
-Filter alignments based on ANI and alignment score criteria.
-
-> **Requires query-grouped BAM.**
+Compute overall statistics for one or more BAM/SAM files. Useful as a quick quality check on the BAM file before or after filtering.
 
 ```bash
-./unicorn alnfilt [options] -b <in.bam>|<in.sam>
+./unicorn bamstats [options] -b <in.bam>|<in.sam>
 Options:
-  -b <str>                     Input bam|sam
-  -o <str> | --outbam  <str>   Output BAM file [stdout]
-  --mode <str>                 Filter mode [ALLTOP]
-                               Available modes:
-                                ALLTOP  - Keep all best-scoring alignments
-                                RNDTOP  - Randomly select one best alignment
-                                PCTTOP  - Keep alignments within --pct of best
-                                ALL     - Keep all alignments
-  --pct <float>                Percentage threshold for PCTTOP mode [0.90]
-  --minani <float>             Minimum ANI [90.0]
-  --maxani <float>             Maximum ANI [100.0]
-  --strictbounds               Remove query if any alignment is out of ANI bounds
-  --verbose                    Print libunicorn's messages.
-  -h                           Print this help message
+  -b <str>         Input bam|sam
+  --outstat <str>  Output statistics file
+  --filelist <str> File containing input file paths, one per line.
+  --printdists     Print distributions of read lengths and ANI.
+                   Creates <inputname>.rlen.dists.txt and <inputname>.ani.dists.txt
 ```
 
 **Example:**
 ```bash
-./unicorn alnfilt -b input.bam --mode ALLTOP --minani 95.0 -o filtered.bam
+./unicorn bamstats -b input.bam > bam_summary.txt
 ```
 
 ---
 
-## Example workflow
+## Example workflows
+
+BAM files are expected in specific sort orders depending on the command used. Starting from an unsorted or coordinate-sorted BAM:
 
 ```bash
-# 1. Filter ambiguous alignments (requires query-grouped BAM)
-./unicorn reassign -b aligned.bam --alpha 0.8 -o reassigned.bam
+# Sort by read name (required for alnfilt and reassign)
+samtools sort -n -o readname_sorted.bam input.bam
+
+# Sort by coordinate (required for taxstats)
+samtools sort -o coordinate_sorted.bam input.bam
+```
+
+### Prokaryotic metagenomics
+
+```bash
+# 1. Filter ambiguous alignments with EM (requires query-grouped BAM)
+./unicorn reassign -b readname_sorted.bam --alpha 0.8 -o reassigned.bam
 
 # 2. Sort by coordinate for taxstats
-samtools sort -o sorted.bam reassigned.bam
+samtools sort -o coordinate_sorted.bam reassigned.bam
 
 # 3. Compute per-taxid statistics
 ./unicorn taxstats \
-  -b sorted.bam \
+  -b coordinate_sorted.bam \
   -a acc2tax.khash \
   -n names.dmp \
   -d nodes.dmp \
   --rank species \
   --minreads 5 \
   --outstat species_stats.txt
+```
 
-# 4. Compute per-reference statistics
-./unicorn refstats -b sorted.bam --minreads 5 > reference_stats.txt
+### Eukaryotic metagenomics
 
-# 5. Generate BAM-level summary
-./unicorn bamstats -b sorted.bam --outstat bam_summary.txt
+```bash
+# 1. Filter alignments by ANI (EM not recommended for eukaryotes)
+./unicorn alnfilt \
+  -b readname_sorted.bam \
+  --mode ALLTOP \
+  --minani 95.0 \
+  -o filtered.bam
+
+# 2. Sort by coordinate for taxstats
+samtools sort -o coordinate_sorted.bam filtered.bam
+
+# 3. Compute per-taxid statistics with duplicity
+./unicorn taxstats \
+  -b coordinate_sorted.bam \
+  -a acc2tax.khash \
+  -n names.dmp \
+  -d nodes.dmp \
+  --rank species \
+  --minreads 5 \
+  --duplicity \
+  --outstat species_stats.txt
+```
+
+### Quality checking
+
+```bash
+# Per-reference statistics
+./unicorn refstats -b coordinate_sorted.bam --minreads 5 > reference_stats.txt
+
+# BAM-level summary with distributions
+./unicorn bamstats -b coordinate_sorted.bam --printdists --outstat bam_summary.txt
 ```
 
 ---
@@ -342,13 +423,14 @@ samtools sort -o sorted.bam reassigned.bam
 - **.khash**: Binary format for faster acc2tax lookups — generate with `--dumpacc2tax`
 
 ### Input requirements
+
 | Command | BAM sort order required |
 |---------|------------------------|
 | refstats | Any |
-| bamstats | Any |
+| alnfilt  | Query-grouped (`SO:queryname` or `GO:query`) |
 | taxstats | Coordinate-sorted (`SO:coordinate`) |
 | reassign | Query-grouped (`SO:queryname` or `GO:query`) |
-| alnfilt  | Query-grouped (`SO:queryname` or `GO:query`) |
+| bamstats | Any |
 
 ---
 
@@ -360,7 +442,7 @@ make test
 
 ## Developers
 
-For development information, see [src/README.md](https://github.com/GeoGenetics/unicorn/tree/unicorn/src)
+For development information, see [src/README.md](https://github.com/miwipe/unicorn-playground/tree/dev/src)
 
 ## License
 

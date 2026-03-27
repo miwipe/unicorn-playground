@@ -592,8 +592,8 @@ static void _finalise_worker(void *data, long i, int tid)
         uint64_t nkmers = 0;
         khint_t ki;
         kh_foreach(t->camex, ki) nkmers += kh_val(t->camex, ki);
-        t->duplicity = nkmers
-                     ? (float)kh_size(t->camex) / nkmers
+    t->duplicity = kh_size(t->camex)
+                     ? (float)nkmers / (float)kh_size(t->camex)
                      : 0.0f;
     }
 }
