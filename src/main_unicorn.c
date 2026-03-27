@@ -198,14 +198,14 @@ static void taxstats_usage(FILE *fp)
             "                               Requires -k / --ksize (default 17). Off by default.\n"
             "  --outstat <str>              Output statistics file [/dev/stdout]\n"
             "  --[FILTER] <PARAM>  Apply filter \"FILTER\" with parameter \"PARAM\"\n"
-            "      For example \"--minreads 100\" to filter out taxids with\n"
-            "      less than 100 reads.\n"
+            "      For example \"--minreads 3\" to filter out taxids with\n"
+            "      less than 3 reads.\n"
             "      Available filters:\n"
-            "       - minrefl  <int>   Minimum reference length. [0]\n"
-            "       - minreads <int>   Minimum number of reads per taxid. [1]\n"
-            "       - minmani  <float> Minimum mean ANI per taxid. [0]\n"
+            "       - minrefl  <int>   Minimum reference length. [1000]\n"
+            "       - minreads <int>   Minimum number of reads per taxid. [3]\n"
+            "       - minmani  <float> Minimum mean ANI per taxid. [93]\n"
             "       - minalnas <int>   Minimum alignment score [-Inf]\n"
-            "       - maxdust  <int>   Maximum alignment dust score [100]\n"
+            "       - maxdust  <int>   Maximum alignment dust score [5]\n"
             "  --filelist <str>             File containing input file paths. One per line.\n"
             "  --rank <str>                 Taxonomic rank to summarize by. [species]\n"
             "  --verbose                    Prints libunicorn's messages.\n"
@@ -236,7 +236,7 @@ static void alnfilt_usage(FILE *fp)
   fprintf(fp, "Options:\n"
             "  -b <str>                     Input bam|sam\n"
             "  -o <str> | --outbam  <str>   Output BAM file [stdout]\n"
-            "  --mode <str>                 Filter mode [alltop]\n"
+            "  --mode <str>                 Filter mode [ALLTOP]\n"
             "                               Available modes:\n"
             "                                RNDTOP  - Randomly select a best alignment\n"
             "                                ALLTOP  - Select all best alignments\n"
@@ -244,8 +244,9 @@ static void alnfilt_usage(FILE *fp)
             "                                           percentage of best alignment.\n"
             "                                ALL     - Select all alignments.\n"
             "  --pct <float>                Percentage threshold for PCTTOP mode [0.90]\n"
-            "  --minani <float>             Minimum average nucleotide identity [90.0]\n"
+            "  --minani <float>             Minimum average nucleotide identity [93.0]\n"
             "  --maxani <float>             Maximum average nucleotide identity [100.0]\n"
+            "  --maxdust <int>              Maximum alignment dust score [5]\n"
             "  --strictbounds               Remove query if ANI out of bounds at any alignment.\n"
             "  --verbose                    Prints libunicorn's messages.\n"
             "  -h                           Print this help message.\n");
@@ -484,10 +485,10 @@ static int unicorn_refstats(int argc, char **argv)
   uint64_t ns;
   unicorn_opt_t opts = {0};
   opts.threads   = 4;
-  opts.minnreads = 1;
-  opts.minrefl   = 0;
+  opts.minnreads = 3;
+  opts.minrefl   = 1000;
   opts.minalnas  = INT32_MIN;
-  opts.maxdust   = 100;
+  opts.maxdust   = 5;
   unicorn_t *u   = NULL;
   unicorn_stat_t *stats = NULL;
   utax_t *utax = NULL;
@@ -682,10 +683,11 @@ static int unicorn_taxstats(int argc, char **argv)
   utax_t *utax = 0;
   unicorn_opt_t opts = {0};
   opts.threads   = 4;
-  opts.minnreads = 1;
-  opts.minrefl   = 0;
+  opts.minnreads = 3;
+  opts.minrefl   = 1000;
   opts.minalnas  = INT32_MIN;
-  opts.maxdust   = 100;
+  opts.maxdust   = 5;
+  opts.minmani   = 93.0f;
   opts.rank      = strdup("species");
   opts.ksize     = 17;
   opts.duplicity = 0;   /* NEW: off by default */
