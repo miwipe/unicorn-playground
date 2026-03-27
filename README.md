@@ -331,12 +331,13 @@ samtools sort -o coordinate_sorted.bam input.bam
 ### Prokaryotic metagenomics
 
 ```bash
-# 1. Filter alignments by ANI
+# 1. Filter alignments by ANI and complexity
 ./unicorn alnfilt \
   -b readname_sorted.bam \
   --mode ALLTOP \
   --minani 93.0 \
-  --minreads 3 \
+  --maxani 100.0 \
+  --maxdust 5 \
   -o filtered.bam
 
 # 2. Sort by coordinate for taxstats
@@ -349,19 +350,23 @@ samtools sort -o coordinate_sorted.bam filtered.bam
   -n names.dmp \
   -d nodes.dmp \
   --rank species \
-  --minreads 5 \
+  --minreads 3 \
+  --minrefl 1000 \
+  --maxdust 5 \
+  --minmani 93 \
   --outstat species_stats.txt
 ```
 
 ### Eukaryotic metagenomics
 
 ```bash
-# 1. Filter alignments by ANI (EM not recommended for eukaryotes)
+# 1. Filter alignments by ANI and complexity
 ./unicorn alnfilt \
   -b readname_sorted.bam \
   --mode ALLTOP \
   --minani 93.0 \
-  --minreads 3 \
+  --maxani 100.0 \
+  --maxdust 5 \
   -o filtered.bam
 
 # 2. Sort by coordinate for taxstats
@@ -374,7 +379,10 @@ samtools sort -o coordinate_sorted.bam filtered.bam
   -n names.dmp \
   -d nodes.dmp \
   --rank species \
-  --minreads 5 \
+  --minreads 3 \
+  --minrefl 1000 \
+  --maxdust 5 \
+  --minmani 93 \
   --duplicity \
   --outstat species_stats.txt
 ```
@@ -385,7 +393,12 @@ samtools sort -o coordinate_sorted.bam filtered.bam
 
 ```bash
 # Per-reference statistics
-./unicorn refstats -b coordinate_sorted.bam --minreads 5 > reference_stats.txt
+./unicorn refstats \
+  -b coordinate_sorted.bam \
+  --minreads 3 \
+  --minrefl 1000 \
+  --maxdust 5 \
+  > reference_stats.txt
 
 # BAM-level summary with distributions
 ./unicorn bamstats -b coordinate_sorted.bam --printdists --outstat bam_summary.txt
